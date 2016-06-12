@@ -18,6 +18,7 @@ from flask_restful import Api as RESTfulAPI
 from flask_cors import CORS
 
 from resources import TaskResource
+from resources import TasksResource
 from resources import DocsResource
 
 from todolist_swagger import swagger
@@ -38,6 +39,7 @@ def _add_resource(api, res, paths):
 def _register_routes(rest_api):
     # Endpoints.
     _add_resource(rest_api, TaskResource, ['/api/v%s/task/<int:id>' % _API_VERSION, '/api/v%s/task' % _API_VERSION])
+    _add_resource(rest_api, TasksResource, ['/api/v%s/tasks' % _API_VERSION])
     # Swagger Docs.
     rest_api.add_resource(DocsResource, '/api/v%s/spec' % _API_VERSION)
 
