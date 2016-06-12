@@ -15,13 +15,15 @@
 import json
 from flask.ext.restful import fields
 from re import findall
+from re import sub
 from collections import defaultdict
 from functools import reduce
 
 _DEF_SWAGGER = {'swagger':'2.0',
-                'consumes':'application/json',
-                'produces':'application/json'}
+                'consumes':['application/json'],
+                'produces':['application/json']}
 _WANTED_METHODS = {'get', 'post', 'put', 'patch', 'delete'}
+JWT_HEADER = {'name':'Authorization', 'required':True, 'type':'string', 'in':'header'}
 
 
 class ReferenceField(fields.Raw):
@@ -37,6 +39,8 @@ class ReferenceField(fields.Raw):
 
 
 class Swagger(object):
+
+
     def __init__(self, **kwargs):
         self.models = defaultdict(list)
         self.header = dict(_DEF_SWAGGER)
@@ -55,7 +59,8 @@ class Swagger(object):
                                        'model_name':model['cls'].__name__}]
 
         schemas = {}
-        path_methods = {path:_operations_to_sw(methods, schemas) for
+        replace_ids = lambda path: sub('<.*?:(.*?)>', r'{\1}', path)
+        path_methods = {replace_ids(path):_operations_to_sw(methods, schemas) for
                         path, methods in path_methods.items()}
         js = dict(self.header)
         js['paths'] = path_methods
@@ -94,9 +99,6 @@ class Swagger(object):
         self.models[model]['paths'] = paths
 
 
-JWT_HEADER = {'name':'Authorization', 'required':True, 'type':'string', 'in':'header'}
-
-
 def path_param(name:str, param_type='integer'):
     return {'name':name, 'required':True, 'type':param_type, 'in':'path'}
 
@@ -127,7 +129,7 @@ def _expand_reference(where:dict, schemas:dict):
 
 def _get_method_sw(method, model_name):
     sw_dict = method.__swagger
-    sw_dict['tags'] = ['all']
+    sw_dict['tags'] = ['all', model_name]
     return sw_dict
 
 
@@ -175,7 +177,8 @@ def _get_methods_for_path(path:str, model):
 def _type_to_str(field_type):
     type_to_str = {fields.String:'string',
                    fields.Integer:'integer',
-                   fields.Float:'float'}
+                   fields.Float:'float',
+                   fields.Boolean:'bool'}
     return type_to_str[type(field_type)]
 
 
