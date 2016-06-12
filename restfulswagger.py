@@ -13,7 +13,7 @@
 # under the License.
 
 import json
-from flask.ext.restful import fields
+from flask_restful import fields
 from re import findall
 from re import sub
 from collections import defaultdict
@@ -22,22 +22,11 @@ from functools import reduce
 _DEF_SWAGGER = {'swagger':'2.0',
                 'consumes':['application/json'],
                 'produces':['application/json']}
-_WANTED_METHODS = {'get', 'post', 'put', 'patch', 'delete'}
-JWT_HEADER = {'name':'Authorization', 'required':True, 'type':'string', 'in':'header'}
 
 
-class ReferenceField(fields.Raw):
-
-
-    def __init__(self, ref_str):
-        super().__init__()
-        self._ref_str = ref_str
-
-
-    def to_swagger(self):
-        return {'$ref':'#/definitions/' + self._ref_str}
-
-
+'''
+Swagger 2.0 for Flask-RESTful Resource classes.
+'''
 class Swagger(object):
 
 
@@ -70,17 +59,20 @@ class Swagger(object):
         return self.json
 
 
-    def dump_json(self, path):
-        js = self.generate()
-        with open(path, 'w') as f:
-            json.dump(js, fp=f, indent=4, sort_keys=True)
-
-
+    '''
+        Use this as a decorator for GET, POST, PUT, PATCH and DELETE methods.
+        expected arguments:
+         - description: a string with method description
+         - parameters: a list with method parameters (use path_param, query_param, body_param or header_param
+         - responses: a dict with response codes and descriptions.
+    '''
     def operation(self, **kwargs):
         def decorate(func):
             sw_dict = dict(kwargs)
             if not 'description' in sw_dict:
+                # Use docstring as description if missing
                 sw_dict.update({'description':func.__doc__})
+            # Save Swagger operation as class method attribute
             setattr(func, '__swagger', sw_dict)
             return func
 
@@ -99,17 +91,10 @@ class Swagger(object):
         self.models[model]['paths'] = paths
 
 
-def path_param(name:str, param_type='integer'):
-    return {'name':name, 'required':True, 'type':param_type, 'in':'path'}
-
-
-def query_param(name:str, param_type='integer'):
-    return {'name':name, 'required':True, 'type':param_type, 'in':'query'}
-
-
 def _get_wanted_methods(model):
+    WANTED_METHODS = {'get', 'post', 'put', 'patch', 'delete'}
     return [getattr(model, method) for
-            method in filter(lambda x: x in _WANTED_METHODS, dir(model))]
+            method in filter(lambda x: x in WANTED_METHODS, dir(model))]
 
 
 def _reference_schema(where:dict, schemas:dict):
@@ -117,13 +102,6 @@ def _reference_schema(where:dict, schemas:dict):
     schema_name = list(schema.keys())[0]
     schema_payload = list(schema.values())[0]
     schemas[schema_name] = schema_payload
-    where['schema'] = {'$ref':'#/definitions/' + schema_name}
-
-
-def _expand_reference(where:dict, schemas:dict):
-    ref = where.pop('reference')
-    schema_name = 'generated-%s' % hash(ref['ref'])
-    schemas[schema_name] = ref['ref']
     where['schema'] = {'$ref':'#/definitions/' + schema_name}
 
 
@@ -147,15 +125,11 @@ def _operations_to_sw(operations:list, schemas:dict):
         for param in method['parameters']:
             if 'schema' in param:
                 _reference_schema(param, schemas)
-            if 'reference' in param:
-                _expand_reference(param, schemas)
 
         # Set references for response schemes.
         for response in method['responses'].values():
             if 'schema' in response:
                 _reference_schema(response, schemas)
-            if 'reference' in response:
-                _expand_reference(param, schemas)
 
     return methods
 
@@ -196,16 +170,27 @@ def _field_to_string(field):
         sch = schema('generated', field.nested)
         items = {'type':'object'}
         items.update(sch['generated'])
-        return {'type':items}
+        return items
 
     return {'type':_type_to_str(field)}
 
 
 def schema(name:str, json:dict):
     schema_vals = {k:_field_to_string(v) for k, v in json.items()}
-
     return {name:{"properties":schema_vals}}
 
 
-def body_params(name:str, json:dict, req=True):
+def path_param(name:str, param_type='integer'):
+    return {'name':name, 'required':True, 'type':param_type, 'in':'path'}
+
+
+def query_param(name:str, param_type='integer'):
+    return {'name':name, 'required':True, 'type':param_type, 'in':'query'}
+
+
+def body_params(name:str, json:dict):
     return {'name':name, 'in':'body', 'schema':schema(name, json)}
+
+
+def header_params(name:str, param_type, req=True):
+    return {'name':name, 'required':req, 'in':'header', 'type':param_type}
