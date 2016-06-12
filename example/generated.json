@@ -1,0 +1,168 @@
+{
+    "basePath": "",
+    "consumes": [
+        "application/json"
+    ],
+    "definitions": {
+        "create_task": {
+            "properties": {
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "task": {
+            "properties": {
+                "completed": {
+                    "type": "bool"
+                },
+                "date_due": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "priority": {
+                    "type": "integer"
+                }
+            }
+        },
+        "task_body": {
+            "properties": {
+                "date_due": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                }
+            }
+        },
+        "tasks": {
+            "properties": {
+                "tasks": {
+                    "items": {
+                        "properties": {
+                            "completed": {
+                                "type": "bool"
+                            },
+                            "date_due": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "id": {
+                                "type": "integer"
+                            },
+                            "priority": {
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "user": {
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "name": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            }
+        }
+    },
+    "host": "localhost:5000",
+    "info": {
+        "description": "TODO list REST API",
+        "version": "0.1"
+    },
+    "paths": {
+        "/api/v0.1/task": {
+            "post": {
+                "description": "Create a new task",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "task_body",
+                        "schema": {
+                            "$ref": "#/definitions/task_body"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Task created",
+                        "schema": {
+                            "$ref": "#/definitions/create_task"
+                        }
+                    }
+                },
+                "tags": [
+                    "all",
+                    "TaskResource"
+                ]
+            }
+        },
+        "/api/v0.1/task/{id}": {
+            "get": {
+                "description": "Get task by ID",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "type": "integer"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/task"
+                        }
+                    }
+                },
+                "tags": [
+                    "all",
+                    "TaskResource"
+                ]
+            }
+        },
+        "/api/v0.1/tasks": {
+            "get": {
+                "description": "Get all tasks",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tasks"
+                        }
+                    }
+                },
+                "tags": [
+                    "all",
+                    "TasksResource"
+                ]
+            }
+        }
+    },
+    "produces": [
+        "application/json"
+    ],
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0"
+}
