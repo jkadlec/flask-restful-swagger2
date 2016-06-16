@@ -60,7 +60,8 @@ class TaskResource(Resource):
         This is a simple POST with body parameters only. We have to specify
         the parameters using the "body_param" function, it expects a dict with flask_restful fields.
         Upon creation, this endpoint returns 201 + id. We can put this into docs using the "schema" function.
-        First parameter of the "schema" function is and ID of schema (we need this because of the way Swagger JSON is structured).
+        First parameter of the "schema" function is and ID of schema
+        (we need this because of the way Swagger JSON is structured).
         ID must be unique. Second parameter is again a dict with field names and field types.
     '''
     @swagger.operation(
@@ -88,7 +89,7 @@ class TaskResource(Resource):
 @swagger.model()
 class TasksResource(Resource):
 
-    #Notice use of the "Nested" field, we need both for singlular references and for list with references.
+    #Notice use of the "Nested" field, we need it both for singlular references and for list with references.
     __json_out = {
        'tasks'  :  fields.List(fields.Nested(TaskResource.json_out)),
        'user'   :  fields.Nested({'id':fields.Integer(), 'name':fields.String()})
